@@ -1,3 +1,5 @@
 require("./bundle");
 
-console.log(mlcjs(mlcjs.example));
+var output = mlcjs(mlcjs.example);
+
+console.info(output.total, output.beta, output.result);

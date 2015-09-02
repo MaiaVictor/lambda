@@ -35,19 +35,22 @@ function deadlock()
 function rewire(wire, agent)
 {
 	var twin = wire.twin;
+	var twin2 = agent.twin;
 	var key;
 
 	if (wire.type != wiretype)
 		return addpair(wire, agent);
 
-	for (key in twin)
-		delete twin[key];
+	twin.type = agent.type;
+	twin.pax = agent.pax;
+	twin.main = agent.main;
+	twin.aux = agent.aux;
+	twin.data = agent.data;
 
-	for (key in agent)
-		twin[key] = agent[key];
-
-	if (agent.twin)
-		agent.twin.twin = twin;
+	if (twin2) {
+		twin.twin = twin2;
+		twin2.twin = twin;
+	}
 }
 
 function eriwer(agent, wire)
@@ -79,36 +82,6 @@ function determ(amb, agent)
 function mreted(agent, amb)
 {
 	determ(amb, agent);
-}
-
-function nnodes(tree)
-{
-	var pax = tree.pax;
-	var n = 1;
-	var i;
-
-	for (i = 0; i < pax.length; i++)
-		n += nnodes(pax[i]);
-
-	return n;
-}
-
-function getcost(left, right)
-{
-	var cost = -1;
-	var i;
-
-	--cost;
-	left = left.pax;
-	for (i = 0; i < left.length; i++)
-		cost += 1 + nnodes(left[i]);
-
-	--cost;
-	right = right.pax;
-	for (i = 0; i < right.length; i++)
-		cost += 1 + nnodes(right[i]);
-
-	return cost;
 }
 
 function cpwlist(orig)
@@ -247,10 +220,7 @@ function apply(left, right, code, rl)
 		effect.call(inenv, lval, rval);
 	}
 
-	interact.cost = getcost(left, right);
-	interact.queue = [];
 	interact.human = human;
-	inqueue.push(interact);
 
 	left = left.pax;
 	for (i = 0; i < left.length; i++)
@@ -338,28 +308,13 @@ function gettable()
 	return tab;
 }
 
-function compare(f, g)
-{
-	return f.cost - g.cost;
-}
-
 function reduce()
 {
-	var i;
+	while (pair = inqueue.shift()) {
+		var rule = pair.rule;
 
-	for (i = 0; i < inqueue.length; i++) {
-		var rule = inqueue[i];
-		var human = rule.human;
-		var queue = rule.queue;
-		var pair = queue.shift();
-
-		if (pair) {
-			rule(pair.left, pair.right);
-			return true;
-		}
+		rule(pair.left, pair.right);
 	}
-
-	return false;
 }
 
 function addpair(left, right)
@@ -367,7 +322,8 @@ function addpair(left, right)
 	var row = table[left.type];
 	var cell = row[right.type];
 
-	cell.queue.push({
+	inqueue.push({
+		rule: cell,
 		left: left,
 		right: right
 	});
@@ -459,6 +415,7 @@ function run(mlc)
 {
 	var src = mlc2in(mlc);
 	var system = parser.parse(src);
+	var pair;
 
 	inverb = system.code;
 	inrules = system.rules;
@@ -471,45 +428,24 @@ function run(mlc)
 	};
 	ntypes = 2;
 
-	deadlock.cost = Infinity;
-	deadlock.queue = [];
 	deadlock.human = "dead>!<lock";
-	inqueue.push(deadlock);
 
-	determ.cost = 1;
-	mreted.cost = 1;
-	determ.queue = [];
-	mreted.queue = [];
 	determ.human = "amb><_";
 	mreted.human = "_><amb";
-	inqueue.push(determ);
-	inqueue.push(mreted);
 
-	rewire.cost = -3;
-	eriwer.cost = -3;
-	rewire.queue = [];
-	eriwer.queue = [];
 	rewire.human = "wire><_";
 	eriwer.human = "_><wire";
-	inqueue.push(rewire);
-	inqueue.push(eriwer);
 
 	wiretype = types["wire"];
 	ambtype = types["amb"];
 
 	table = gettable();
 
-	inqueue.sort(compare);
 	init();
 
-	while (true) {
-		var active = reduce();
+	reduce();
 
-		if (!active)
-			break;
-	}
-
-	return inenv.result;
+	return inenv;
 }
 
 run.example = example.replace(/\n*$/, "");

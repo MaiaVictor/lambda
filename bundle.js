@@ -653,7 +653,7 @@ var mlc = require("./lambda");
 
 
 var parser = new mlc.Parser();
-var system = "\\print {\n\t/* Output results of read-back. */\n\tthis.result = RVAL;\n} \\atom;\n\n\\read[a] {\n\t/* Unshare variable. */\n} \\share[\\copy(b, \\read_{LVAL}(a)), b];\n\n\\read[a] {\n\t/* Initiate application. */\n} \\apply[\\lambda(b, \\read_{LVAL}(a)), b];\n\n\\read[a] {\n\t/* Read back abstraction. */\n} \\lambda[\\atom_{this.mkvar(true)}, \\read_{this.abst(LVAL, this.mkvar())}(a)];\n\n\\lambda[\\read_{this.appl(\"%s\", RVAL)}(a), a] {\n\t/* Read back application. */\n} \\atom;\n\n\\read[\\atom_{this.atom(LVAL, RVAL)}] {\n\t/* Read back an atom. */\n} \\atom;\n\n\\copy[\\atom_{RVAL}, \\atom_{RVAL}] {\n\t/* Copy an atom. */\n} \\atom;\n\n\\dup[\\atom_{RVAL}, \\atom_{RVAL}] {\n\t/* Duplicate an atom. */\n} \\atom;\n\n\\lambda[a, b] {\n\t/* Unshare variable. */\n} \\share[\\copy(c, \\lambda(a, b)), c];\n\n\\lambda[a, b] {\n\t/* Initiate application. */\n} \\apply[\\lambda(c, \\lambda(a, b)), c];\n\n\\lambda[a, b] {\n\t/* Apply a closed term. */\n} \\lambda[a, b];\n\n\\copy[a, b] {\n\t/* Unshare variable. */\n} \\share[\\copy(c, \\copy(a, b)), c];\n\n\\copy[a, b] {\n\t/* Initiate application. */\n} \\apply[\\lambda(c, \\copy(a, b)), c];\n\n\\copy[\\lambda(a, b), \\lambda(c, d)] {\n\t/* Initiate copy of a closed term. */\n} \\lambda[\\dup(a, c), \\dup(b, d)];\n\n\\dup[a, b] {\n\t/* Unshare variable. */\n} \\share[\\copy(c, \\dup(a, b)), c];\n\n\\dup[a, b] {\n\t/* Duplicate sharing. */\n} \\copy[\\dup(\\amb(c, \\share(a, d), d), \\amb(e, \\share(b, f), f)), \\dup(c, e)];\n\n\\dup[\\apply(a, b), \\apply(c, d)] {\n\t/* Duplicate application. */\n} \\apply[\\dup(a, c), \\dup(b, d)];\n\n\\dup[\\lambda(a, b), \\lambda(c, d)] {\n\t/* Duplicate abstraction. */\n} \\lambda[\\dup(a, c), \\dup(b, d)];\n\n\\dup[a, b] {\n\t/* Finish duplication. */\n} \\dup[a, b];\n\n\\erase {\n\t/* Erase an atom. */\n} \\atom;\n\n\\erase {\n\t/* Erase sharing. */\n} \\share[a, a];\n\n\\erase {\n\t/* Erase application. */\n} \\apply[\\erase, \\erase];\n\n\\erase {\n\t/* Erase abstraction. */\n} \\lambda[\\erase, \\erase];\n\n\\erase {\n\t/* Erase copy initiator. */\n} \\copy[\\erase, \\erase];\n\n\\erase {\n\t/* Erase duplicator. */\n} \\dup[\\erase, \\erase];\n\n\\erase {\n\t/* Finish erasing. */\n} \\erase;\n\n$$\n\nINCONFIG\n\n$$\n\nvar id = 0;\n\nfunction mkvar(fresh)\n{\n\tif (fresh)\n\t\t++id;\n\n\treturn \"v\" + id.toFixed(0);\n}\n\nfunction place(buf, format, str)\n{\n\tvar sub = format.replace(\"%s\", str);\n\n\tsub = sub.replace(\"%%\", \"%s\");\n\n\treturn buf.replace(\"%s\", sub);\n}\n\nfunction abst(buf, str)\n{\n\treturn place(buf, \"%s: %%\", str);\n}\n\nfunction appl(buf, str)\n{\n\treturn place(buf, \"%s (%%)\", str);\n}\n\nfunction atom(buf, str)\n{\n\treturn place(buf, \"%s\", str)\n}\n\nthis.mkvar = mkvar;\nthis.abst = abst;\nthis.appl = appl;\nthis.atom = atom;\n";
+var system = "\\print {\n\t/* Output results of read-back. */\n\tthis.result = RVAL;\n\t++this.total;\n} \\atom;\n\n\\read[a] {\n\t/* Unshare variable. */\n\t++this.total;\n} \\share[\\copy(b, \\read_{LVAL}(a)), b];\n\n\\read[a] {\n\t/* Initiate application. */\n\t++this.total;\n} \\apply[\\lambda(b, \\read_{LVAL}(a)), b];\n\n\\read[a] {\n\t/* Read back abstraction. */\n\t++this.total;\n} \\lambda[\\atom_{this.mkvar(true)}, \\read_{this.abst(LVAL, this.mkvar())}(a)];\n\n\\lambda[\\read_{this.appl(\"%s\", RVAL)}(a), a] {\n\t/* Read back application. */\n\t++this.total;\n} \\atom;\n\n\\read[\\atom_{this.atom(LVAL, RVAL)}] {\n\t/* Read back an atom. */\n\t++this.total;\n} \\atom;\n\n\\copy[\\atom_{RVAL}, \\atom_{RVAL}] {\n\t/* Copy an atom. */\n\t++this.total;\n} \\atom;\n\n\\dup[\\atom_{RVAL}, \\atom_{RVAL}] {\n\t/* Duplicate an atom. */\n\t++this.total;\n} \\atom;\n\n\\lambda[a, b] {\n\t/* Unshare variable. */\n\t++this.total;\n} \\share[\\copy(c, \\lambda(a, b)), c];\n\n\\lambda[a, b] {\n\t/* Initiate application. */\n\t++this.total;\n} \\apply[\\lambda(c, \\lambda(a, b)), c];\n\n\\lambda[a, b] {\n\t/* Apply a closed term. */\n\t++this.beta;\n\t++this.total;\n} \\lambda[a, b];\n\n\\copy[a, b] {\n\t/* Unshare variable. */\n\t++this.total;\n} \\share[\\copy(c, \\copy(a, b)), c];\n\n\\copy[a, b] {\n\t/* Initiate application. */\n\t++this.total;\n} \\apply[\\lambda(c, \\copy(a, b)), c];\n\n\\copy[\\lambda(a, b), \\lambda(c, d)] {\n\t/* Initiate copy of a closed term. */\n\t++this.total;\n} \\lambda[\\dup(a, c), \\dup(b, d)];\n\n\\dup[a, b] {\n\t/* Unshare variable. */\n\t++this.total;\n} \\share[\\copy(c, \\dup(a, b)), c];\n\n\\dup[a, b] {\n\t/* Duplicate sharing. */\n\t++this.total;\n} \\copy[\\dup(\\amb(c, \\share(a, d), d), \\amb(e, \\share(b, f), f)), \\dup(c, e)];\n\n\\dup[\\apply(a, b), \\apply(c, d)] {\n\t/* Duplicate application. */\n\t++this.total;\n} \\apply[\\dup(a, c), \\dup(b, d)];\n\n\\dup[\\lambda(a, b), \\lambda(c, d)] {\n\t/* Duplicate abstraction. */\n\t++this.total;\n} \\lambda[\\dup(a, c), \\dup(b, d)];\n\n\\dup[a, b] {\n\t/* Finish duplication. */\n\t++this.total;\n} \\dup[a, b];\n\n\\erase {\n\t/* Erase an atom. */\n\t++this.total;\n} \\atom;\n\n\\erase {\n\t/* Erase sharing. */\n\t++this.total;\n} \\share[a, a];\n\n\\erase {\n\t/* Erase application. */\n\t++this.total;\n} \\apply[\\erase, \\erase];\n\n\\erase {\n\t/* Erase abstraction. */\n\t++this.total;\n} \\lambda[\\erase, \\erase];\n\n\\erase {\n\t/* Erase copy initiator. */\n\t++this.total;\n} \\copy[\\erase, \\erase];\n\n\\erase {\n\t/* Erase duplicator. */\n\t++this.total;\n} \\dup[\\erase, \\erase];\n\n\\erase {\n\t/* Finish erasing. */\n\t++this.total;\n} \\erase;\n\n$$\n\nINCONFIG\n\n$$\n\nvar id = 0;\n\nfunction mkvar(fresh)\n{\n\tif (fresh)\n\t\t++id;\n\n\treturn \"v\" + id.toFixed(0);\n}\n\nfunction place(buf, format, str)\n{\n\tvar sub = format.replace(\"%s\", str);\n\n\tsub = sub.replace(\"%%\", \"%s\");\n\n\treturn buf.replace(\"%s\", sub);\n}\n\nfunction abst(buf, str)\n{\n\treturn place(buf, \"%s: %%\", str);\n}\n\nfunction appl(buf, str)\n{\n\treturn place(buf, \"%s (%%)\", str);\n}\n\nfunction atom(buf, str)\n{\n\treturn place(buf, \"%s\", str)\n}\n\nthis.mkvar = mkvar;\nthis.abst = abst;\nthis.appl = appl;\nthis.atom = atom;\nthis.beta = 0;\nthis.total = 0;\n";
 var lastwire;
 
 function getcap(left, right)
@@ -1628,19 +1628,22 @@ function deadlock()
 function rewire(wire, agent)
 {
 	var twin = wire.twin;
+	var twin2 = agent.twin;
 	var key;
 
 	if (wire.type != wiretype)
 		return addpair(wire, agent);
 
-	for (key in twin)
-		delete twin[key];
+	twin.type = agent.type;
+	twin.pax = agent.pax;
+	twin.main = agent.main;
+	twin.aux = agent.aux;
+	twin.data = agent.data;
 
-	for (key in agent)
-		twin[key] = agent[key];
-
-	if (agent.twin)
-		agent.twin.twin = twin;
+	if (twin2) {
+		twin.twin = twin2;
+		twin2.twin = twin;
+	}
 }
 
 function eriwer(agent, wire)
@@ -1672,36 +1675,6 @@ function determ(amb, agent)
 function mreted(agent, amb)
 {
 	determ(amb, agent);
-}
-
-function nnodes(tree)
-{
-	var pax = tree.pax;
-	var n = 1;
-	var i;
-
-	for (i = 0; i < pax.length; i++)
-		n += nnodes(pax[i]);
-
-	return n;
-}
-
-function getcost(left, right)
-{
-	var cost = -1;
-	var i;
-
-	--cost;
-	left = left.pax;
-	for (i = 0; i < left.length; i++)
-		cost += 1 + nnodes(left[i]);
-
-	--cost;
-	right = right.pax;
-	for (i = 0; i < right.length; i++)
-		cost += 1 + nnodes(right[i]);
-
-	return cost;
 }
 
 function cpwlist(orig)
@@ -1840,10 +1813,7 @@ function apply(left, right, code, rl)
 		effect.call(inenv, lval, rval);
 	}
 
-	interact.cost = getcost(left, right);
-	interact.queue = [];
 	interact.human = human;
-	inqueue.push(interact);
 
 	left = left.pax;
 	for (i = 0; i < left.length; i++)
@@ -1931,28 +1901,13 @@ function gettable()
 	return tab;
 }
 
-function compare(f, g)
-{
-	return f.cost - g.cost;
-}
-
 function reduce()
 {
-	var i;
+	while (pair = inqueue.shift()) {
+		var rule = pair.rule;
 
-	for (i = 0; i < inqueue.length; i++) {
-		var rule = inqueue[i];
-		var human = rule.human;
-		var queue = rule.queue;
-		var pair = queue.shift();
-
-		if (pair) {
-			rule(pair.left, pair.right);
-			return true;
-		}
+		rule(pair.left, pair.right);
 	}
-
-	return false;
 }
 
 function addpair(left, right)
@@ -1960,7 +1915,8 @@ function addpair(left, right)
 	var row = table[left.type];
 	var cell = row[right.type];
 
-	cell.queue.push({
+	inqueue.push({
+		rule: cell,
 		left: left,
 		right: right
 	});
@@ -2052,6 +2008,7 @@ function run(mlc)
 {
 	var src = mlc2in(mlc);
 	var system = parser.parse(src);
+	var pair;
 
 	inverb = system.code;
 	inrules = system.rules;
@@ -2064,45 +2021,24 @@ function run(mlc)
 	};
 	ntypes = 2;
 
-	deadlock.cost = Infinity;
-	deadlock.queue = [];
 	deadlock.human = "dead>!<lock";
-	inqueue.push(deadlock);
 
-	determ.cost = 1;
-	mreted.cost = 1;
-	determ.queue = [];
-	mreted.queue = [];
 	determ.human = "amb><_";
 	mreted.human = "_><amb";
-	inqueue.push(determ);
-	inqueue.push(mreted);
 
-	rewire.cost = -3;
-	eriwer.cost = -3;
-	rewire.queue = [];
-	eriwer.queue = [];
 	rewire.human = "wire><_";
 	eriwer.human = "_><wire";
-	inqueue.push(rewire);
-	inqueue.push(eriwer);
 
 	wiretype = types["wire"];
 	ambtype = types["amb"];
 
 	table = gettable();
 
-	inqueue.sort(compare);
 	init();
 
-	while (true) {
-		var active = reduce();
+	reduce();
 
-		if (!active)
-			break;
-	}
-
-	return inenv.result;
+	return inenv;
 }
 
 run.example = example.replace(/\n*$/, "");
