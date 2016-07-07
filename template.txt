@@ -1,43 +1,43 @@
 \print {
 	/* Output results of read-back. */
-	this.result = RVAL;
+	this.nf = M;
 	++this.total;
-} \atom;
+} \atom_{M};
 
-\read[a] {
+\read_{C}[a] {
 	/* Unshare variable. */
 	++this.total;
-} \share[\copy(b, \read_{LVAL}(a)), b];
+} \share[\copy(b, \read_{C}(a)), b];
 
-\read[a] {
+\read_{C}[a] {
 	/* Initiate application. */
 	++this.total;
-} \apply[\lambda(b, \read_{LVAL}(a)), b];
+} \apply[\lambda(b, \read_{C}(a)), b];
 
-\read[a] {
+\read_{C}[a] {
 	/* Read back abstraction. */
 	++this.total;
-} \lambda[\atom_{this.mkvar(true)}, \read_{this.abst(LVAL, this.mkvar())}(a)];
+} \lambda[\atom_{this.mkid()}, \read_{this.abst(C)}(a)];
 
-\lambda[\read_{this.appl("%s", RVAL)}(a), a] {
+\lambda[\read_{this.appl(M)}(a), a] {
 	/* Read back application. */
 	++this.total;
-} \atom;
+} \atom_{M};
 
-\read[\atom_{this.atom(LVAL, RVAL)}] {
+\read_{C}[\atom_{this.atom(C, M)}] {
 	/* Read back an atom. */
 	++this.total;
-} \atom;
+} \atom_{M};
 
-\copy[\atom_{RVAL}, \atom_{RVAL}] {
+\copy[\atom_{M}, \atom_{M}] {
 	/* Copy an atom. */
 	++this.total;
-} \atom;
+} \atom_{M};
 
-\dup[\atom_{RVAL}, \atom_{RVAL}] {
+\dup[\atom_{M}, \atom_{M}] {
 	/* Duplicate an atom. */
 	++this.total;
-} \atom;
+} \atom_{M};
 
 \lambda[a, b] {
 	/* Unshare variable. */
@@ -78,7 +78,8 @@
 \dup[a, b] {
 	/* Duplicate sharing. */
 	++this.total;
-} \copy[\dup(\amb(c, \share(a, d), d), \amb(e, \share(b, f), f)), \dup(c, e)];
+} \copy[\dup(\amb(c, \share(a, d), d), \amb(e, \share(b, f), f)),
+	\dup(c, e)];
 
 \dup[\apply(a, b), \apply(c, d)] {
 	/* Duplicate application. */
@@ -98,7 +99,7 @@
 \erase {
 	/* Erase an atom. */
 	++this.total;
-} \atom;
+} \atom_{M};
 
 \erase {
 	/* Erase sharing. */
@@ -146,31 +147,66 @@ function mkvar(fresh)
 	return "v" + id.toFixed(0);
 }
 
-function place(buf, format, str)
+function mkid(name)
 {
-	var sub = format.replace("%s", str);
+	var obj = {
+		node: "atom",
+		name: name ? name : mkvar(true)
+	};
 
-	sub = sub.replace("%%", "%s");
-
-	return buf.replace("%s", sub);
+	return obj;
 }
 
-function abst(buf, str)
+function mkhole()
 {
-	return place(buf, "%s: %%", str);
+	var obj = {};
+
+	obj.hole = obj;
+	return obj;
 }
 
-function appl(buf, str)
+function atom(context, obj)
 {
-	return place(buf, "%s (%%)", str);
+	var hole = context.hole;
+	var key;
+
+	for (key in obj)
+		hole[key] = obj[key];
+
+	context.hole = obj.hole;
+	return context;
 }
 
-function atom(buf, str)
+function abst(context)
 {
-	return place(buf, "%s", str)
+	var hole = mkhole();
+	var obj = {
+		node: "abst",
+		var: mkvar(),
+		body: hole,
+		hole: hole
+	};
+
+	return atom(context, obj);
 }
 
+function appl(left)
+{
+	var context = mkhole();
+	var hole = mkhole();
+	var obj = {
+		node: "appl",
+		left: left,
+		right: hole,
+		hole: hole
+	};
+
+	return atom(context, obj);
+}
+
+this.mkid = mkid;
 this.mkvar = mkvar;
+this.mkhole = mkhole;
 this.abst = abst;
 this.appl = appl;
 this.atom = atom;

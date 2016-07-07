@@ -82,21 +82,22 @@ function obj2mlc(obj)
 		if ("abst" == obj.left.node)
 			left = "(" + left + ")";
 
-		if ("atom" != obj.right.node)
+		if ("abst" == obj.right.node)
+			right = "(" + right + ")";
+
+		if ("appl" == obj.right.node)
 			right = "(" + right + ")";
 
 		return left + " " + right;
 	}
+
+	return "[ ]";
 }
 
-function getwire(hint)
+function mkwire()
 {
-	if (!hint)
-		hint = "";
-
 	++lastwire;
-
-	return "w" + lastwire.toFixed(0) + hint;
+	return "w" + lastwire.toFixed(0);
 }
 
 function subst(obj, shared, side)
@@ -129,8 +130,8 @@ function mktwins(left, right)
 	var atom;
 
 	for (atom in shared) {
-		var wleft = getwire("left" + atom);
-		var wright = getwire("right" + atom);
+		var wleft = mkwire();
+		var wright = mkwire();
 
 		shared[atom] = {
 			left: wleft,
@@ -154,7 +155,7 @@ function psi(shared)
 		var twins = shared[atom];
 		var wleft = twins.left;
 		var wright = twins.right;
-		var wire = getwire("back" + atom);
+		var wire = mkwire();
 		var eqn = template;
 
 		eqn = eqn.replace("%s", wleft);
@@ -176,7 +177,7 @@ function gamma(obj, root)
 	var eqn = root + " = %s";
 
 	if ("atom" == node) {
-		var agent = "\\atom_{\"%s\"}";
+		var agent = "\\atom_{this.mkid(\"%s\")}";
 
 		if (obj.free)
 			agent = agent.replace("%s", obj.name);
@@ -190,7 +191,7 @@ function gamma(obj, root)
 		var body = obj.body;
 		var fv = getfv(body);
 		var id = obj.var;
-		var wire = getwire("body" + id);
+		var wire = mkwire();
 
 		if (id in fv)
 			agent = id;
@@ -205,8 +206,8 @@ function gamma(obj, root)
 		body = gamma(body, wire);
 		list = list.concat(body);
 	} else if ("appl" == node) {
-		var wleft = getwire("left");
-		var wright = getwire("right");
+		var wleft = mkwire();
+		var wright = mkwire();
 		var agent = "\\apply(%s, %s)";
 		var left = obj.left;
 		var right = obj.right;
@@ -251,12 +252,16 @@ function alpha(obj, bv)
 		}
 	} else if ("abst" == node) {
 		var id = obj.var;
-		var wire = getwire(id);
+		var wire = mkwire();
+		var old = bv[id];
 		var body;
 
 		bv[id] = wire;
 		body = alpha(obj.body, bv);
 		delete bv[id];
+
+		if (old)
+			bv[id] = old;
 
 		obj = {
 			node: "abst",
@@ -285,7 +290,7 @@ function getconf(obj)
 
 	obj = alpha(obj);
 	conf = gamma(obj, "root");
-	conf.push("\\read_{\"%s\"}(\\print) = root");
+	conf.push("\\read_{this.mkhole()}(\\print) = root");
 	return conf;
 }
 
@@ -313,6 +318,8 @@ function encode(mlc)
 		};
 	}
 
+	encode.term = obj2mlc(term);
+
 	eqns = getconf(term);
 
 	for (i = 0; i < eqns.length; i++)
@@ -320,5 +327,7 @@ function encode(mlc)
 
 	return system.replace("INCONFIG\n", inconfig);
 }
+
+encode.obj2mlc = obj2mlc;
 
 module.exports = encode;

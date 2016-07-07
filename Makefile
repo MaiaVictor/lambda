@@ -1,9 +1,10 @@
 BRFS = node_modules/.bin/brfs
 BROWSERIFY = node_modules/.bin/browserify
 JISON = node_modules/.bin/jison
+INETLIB = node_modules/inet-lib/package.json
 
 SRC = \
-	agents.js \
+	$(INETLIB) \
 	encode.js \
 	fact.mlc \
 	lambda.js \
@@ -11,13 +12,18 @@ SRC = \
 	template.txt
 
 all: bundle.js
+	node check.js debug.mlc >debug.tmp
+	tail debug.tmp
 	time -p node check.js
 
 bundle.js: $(BROWSERIFY) $(BRFS) $(SRC)
 	node_modules/.bin/browserify -t brfs -o bundle.js system.js
 
+$(INETLIB):
+	npm install inet-lib
+
 $(JISON):
-	npm install jison
+	npm install jison@0.4.15
 
 $(BROWSERIFY):
 	npm install browserify
@@ -26,7 +32,7 @@ $(BRFS):
 	npm install brfs
 
 clean:
-	-rm -f agents.js lambda.js *.tmp
+	-rm -f lambda.js profile.json *.tmp
 	-rm -fr node_modules
 
 .POSIX:
